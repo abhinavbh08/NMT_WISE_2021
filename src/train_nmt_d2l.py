@@ -62,6 +62,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
     sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
     for epoch in range(n_epochs):
         running_loss = 0.0
+        model.train()
         for batch_idx, batch in enumerate(data_iter):
             optimizer.zero_grad()
             x, x_len, y, y_len = [item.to(device) for item in batch]
