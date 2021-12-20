@@ -10,13 +10,13 @@ from read_data_nmt import truncate_pad
 from nltk.translate.bleu_score import corpus_bleu
 import nltk
 
-embedding_size = 50
-hidden_size = 100
+embedding_size = 100
+hidden_size = 200
 num_layers = 1
-batch_size = 8
-len_sequence = 15
+batch_size = 32
+len_sequence = 20
 lr = 0.003
-n_epochs = 50
+n_epochs = 30
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def predict_sentence(model, sentence, src_vocab, tgt_vocab, num_steps, device):
@@ -27,12 +27,14 @@ def predict_sentence(model, sentence, src_vocab, tgt_vocab, num_steps, device):
     x_len = torch.tensor([len(src_tokens)], device=device)
     src_tokens = truncate_pad(src_tokens, num_steps, src_vocab["<pad>"])
     x = torch.unsqueeze(torch.tensor(src_tokens, dtype=torch.long, device=device), dim=0)
-    enc_output = model.encoder(x)
-    state = model.decoder.init_state(enc_output, x_len)
+    with torch.no_grad():
+        enc_output = model.encoder(x)
+        state = model.decoder.init_state(enc_output, x_len)
     y = torch.unsqueeze(torch.tensor([tgt_vocab['<bos>']], dtype=torch.long, device=device), dim=0)
     output_seq = []
     for i in range(num_steps):
-        output, state = model.decoder(y, state)
+        with torch.no_grad():
+            output, state = model.decoder(y, state)
         y = output.argmax(dim=2)
         y_pred = y.squeeze(dim=0).type(torch.int32).item()
         if y_pred == tgt_vocab["<eos>"]:
