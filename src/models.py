@@ -1,10 +1,14 @@
 import torch
 import numpy as np
+from torch._C import dtype
+from torch.functional import norm
 import torch.nn as nn
 from torch.nn.modules import batchnorm
 import torch.nn.functional as F
-from attention_scoring import AdditiveAttention, DotProductAttention
-
+from attention_scoring import AdditiveAttention, DotProductAttention, MultiHeadAttention
+from ffns_layer_norm import FFNs, LNorm
+from pos_enc import PositionalEncoding
+import math
 
 class RNNModel(nn.Module):
     def __init__(self, n_tokens, embedding_size):
@@ -34,7 +38,7 @@ class S2SEncoder(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embedding_size)
         self.rnn = nn.GRU(embedding_size, hidden_size, num_layers, batch_first=True)
 
-    def forward(self, x):
+    def forward(self, x, *args):
         x = self.embedding(x)
         output, state = self.rnn(x)
         return output, state
@@ -91,15 +95,119 @@ class S2SAttentionDecoder(nn.Module):
 
 class S2SEncoderDecoder(nn.Module):
 
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder, decoder, **kwargs):
         super(S2SEncoderDecoder, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
 
     def forward(self, enc_x, dec_x, *args):
-        enc_outputs = self.encoder(enc_x)
+        enc_outputs = self.encoder(enc_x, *args)
         enc_state = self.decoder.init_state(enc_outputs, *args)
         return self.decoder(dec_x, enc_state)
+
+
+class TransformerEncoderBlock(nn.Module):
+
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, **kwargs):
+        super(TransformerEncoderBlock, self).__init__(**kwargs)
+        self.attention = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
+        self.l_norm1 = LNorm(norm_shape, dropout)
+        self.fully_connected = FFNs(ffn_input, ffn_hidden, hidden_size)
+        self.l_norm2 = LNorm(norm_shape, dropout)
+
+    def forward(self, x, valid_lens):
+        x = self.l_norm1(x, self.attention(x, x, x, valid_lens))
+        return self.l_norm2(x, self.fully_connected(x))
+
+
+class TransformerEncoder(nn.Module):
+
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, vocab_size, num_layers, **kwargs):
+        super(TransformerEncoder, self).__init__(**kwargs)
+        self.hidden_size = hidden_size
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        self.pos_encoding = PositionalEncoding(hidden_size, dropout)
+        self.blocks = nn.Sequential()
+        for i in range(num_layers):
+            self.blocks.add_module(str(i), TransformerEncoderBlock(query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden))
+
+    def forward(self, x, valid_lens, *args):
+        x = self.pos_encoding(self.embedding(x) * math.sqrt(self.hidden_size))
+        for i, block in enumerate(self.blocks):
+            x = block(x, valid_lens)
+        return x
+
+
+class Transformerdecoderblock(nn.Module):
+
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, i, **kwargs):
+        super(Transformerdecoderblock, self).__init__(**kwargs)
+        self.i = i
+        self.att1 = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
+        self.l_norm1 = LNorm(norm_shape, dropout)
+        self.att2 = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
+        self.l_norm2 = LNorm(norm_shape, dropout)
+        self.fully_connected = FFNs(ffn_input, ffn_hidden, hidden_size)
+        self.l_norm3 = LNorm(norm_shape, dropout)
+
+    def forward(self, x, state):
+        enc_outputs, enc_valid_lens = state[0], state[1]
+        if state[2][self.i] is None:
+            keys = x
+        else:
+            keys = torch.cat((state[2][self.i], x), axis=1)
+        state[2][self.i] = keys
+        if self.training:
+            bs, num_steps, dim = x.shape
+            dec_valid_lens = torch.arange(
+                1, num_steps + 1, device=x.device).repeat(bs, 1)
+        else:
+            dec_valid_lens = None
+
+        x_att = self.att1(x, keys, keys, dec_valid_lens)
+        y = self.l_norm1(x, x_att)
+        y_att = self.att2(y, enc_outputs, enc_outputs, enc_valid_lens)
+        z = self.l_norm2(y, y_att)
+        z_ffn = self.fully_connected(z)
+        return self.l_norm3(z, z_ffn), state
+
+class TransformerDecoder(nn.Module):
+
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, vocab_size, num_layers, **kwargs):
+        super(TransformerDecoder, self).__init__(**kwargs)
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        self.pos_encoding = PositionalEncoding(hidden_size, dropout)
+        self.blocks = nn.Sequential()
+        for i in range(num_layers):
+            self.blocks.add_module(
+                str(i), Transformerdecoderblock(
+                    query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, i
+                ))
+        self.linear = nn.Linear(hidden_size, vocab_size)
+
+    def init_state(self, enc_outputs, enc_valid_lens, *args):
+        return [enc_outputs, enc_valid_lens, [None] * self.num_layers]
+
+    def forward(self, x, state):
+        x = self.pos_encoding(self.embedding(x) * math.sqrt(self.hidden_size))
+        for i, block in enumerate(self.blocks):
+            x, state = block(x, state)
+        return self.linear(x), state
+
+# x = torch.ones((2, 100, 24))
+# valid_lens = torch.tensor([3, 2])
+# encoder_block = TransformerEncoderBlock(query=24, key=24, value=24, hidden_size=24, num_head=8, dropout=0.1, norm_shape=[100, 24], ffn_input=24, ffn_hidden=48)
+# encoder_block.eval()
+# # print(encoder_block(x, valid_lens).shape)
+# # print("abc")
+# dec_blck = Transformerdecoderblock(query=24, key=24, value=24, hidden_size=24, num_head=8, dropout=0.1, norm_shape=[100, 24], ffn_input=24, ffn_hidden=48, i=0)
+# dec_blck.eval()
+# state = [encoder_block(x, valid_lens), valid_lens, [None]]
+# ans = dec_blck(x, state)
+# print("abc")
+
 
 # class AttentionDecoder()
 # x = torch.arange(12).reshape(3, 4)

@@ -1,6 +1,6 @@
 from torch import optim
 from read_data_nmt import load_data, read_test_data
-from models import S2SAttentionDecoder, S2SEncoder, S2SDecoder, S2SEncoderDecoder
+from models import S2SAttentionDecoder, S2SEncoder, S2SDecoder, S2SEncoderDecoder, TransformerEncoder, TransformerDecoder
 from loss import MaskedCELoss
 import torch
 import torch.nn as nn
@@ -10,13 +10,6 @@ from read_data_nmt import truncate_pad
 from nltk.translate.bleu_score import corpus_bleu
 import nltk
 
-embedding_size = 100
-hidden_size = 200
-num_layers = 1
-batch_size = 32
-len_sequence = 20
-lr = 0.003
-n_epochs = 30
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def predict_sentence(model, sentence, src_vocab, tgt_vocab, num_steps, device):
@@ -28,7 +21,7 @@ def predict_sentence(model, sentence, src_vocab, tgt_vocab, num_steps, device):
     src_tokens = truncate_pad(src_tokens, num_steps, src_vocab["<pad>"])
     x = torch.unsqueeze(torch.tensor(src_tokens, dtype=torch.long, device=device), dim=0)
     with torch.no_grad():
-        enc_output = model.encoder(x)
+        enc_output = model.encoder(x, x_len)
         state = model.decoder.init_state(enc_output, x_len)
     y = torch.unsqueeze(torch.tensor([tgt_vocab['<bos>']], dtype=torch.long, device=device), dim=0)
     output_seq = []
@@ -82,28 +75,43 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
         test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
         print(f"Epoch_Loss, {epoch}, {running_loss / len(data_iter.dataset)}")
 
+
+# embedding_size = 100
+# hidden_size = 200
+# num_layers = 1
+batch_size = 32
+len_sequence = 20
+lr = 0.003
+n_epochs = 30
+
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
-encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
-decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
+# encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
+# decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
+# model = S2SEncoderDecoder(encoder, decoder)
+encoder = TransformerEncoder(
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(src_vocab), num_layers = 2
+)
+decoder = TransformerDecoder(
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(tgt_vocab), num_layers = 2
+)
 model = S2SEncoderDecoder(encoder, decoder)
 train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)    
 PATH = "model_att.pt"
 torch.save(model.state_dict(), PATH)
 
 # model.load_state_dict(torch.load(PATH))
+# sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number."]
+# sentences_preprocessed = [sentence for sentence in sentences]
+# true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück."]
+# true_trans_preprocessed = [trans for trans in true_trans]
+# predictions = []
+# for sentence in sentences_preprocessed:
+#     sentence_predicted = predict_sentence(model, sentence, src_vocab, tgt_vocab, len_sequence, device)
+#     predictions.append(sentence_predicted)
 
-sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number."]
-sentences_preprocessed = [sentence for sentence in sentences]
-true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück."]
-true_trans_preprocessed = [trans for trans in true_trans]
-predictions = []
-for sentence in sentences_preprocessed:
-    sentence_predicted = predict_sentence(model, sentence, src_vocab, tgt_vocab, len_sequence, device)
-    predictions.append(sentence_predicted)
-
-references = [[nltk.tokenize.word_tokenize(sent.lower())] for sent in true_trans_preprocessed]
-candidates = [nltk.tokenize.word_tokenize(sent.lower()) for sent in predictions]
-score = corpus_bleu(references, candidates)
-print(score)
-print(sentences_preprocessed, true_trans_preprocessed)
-print(predictions)
+# references = [[nltk.tokenize.word_tokenize(sent.lower())] for sent in true_trans_preprocessed]
+# candidates = [nltk.tokenize.word_tokenize(sent.lower()) for sent in predictions]
+# score = corpus_bleu(references, candidates)
+# print(score)
+# print(sentences_preprocessed, true_trans_preprocessed)
+# print(predictions)
