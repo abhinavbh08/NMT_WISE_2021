@@ -82,7 +82,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
 batch_size = 64
 len_sequence = 20
 lr = 0.005
-n_epochs = 100
+n_epochs = 30
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
 # encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
