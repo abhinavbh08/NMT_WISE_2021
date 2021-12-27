@@ -20,14 +20,12 @@ def predict_sentence(model, sentence, src_vocab, tgt_vocab, num_steps, device):
     x_len = torch.tensor([len(src_tokens)], device=device)
     src_tokens = truncate_pad(src_tokens, num_steps, src_vocab["<pad>"])
     x = torch.unsqueeze(torch.tensor(src_tokens, dtype=torch.long, device=device), dim=0)
-    with torch.no_grad():
-        enc_output = model.encoder(x, x_len)
-        state = model.decoder.init_state(enc_output, x_len)
+    enc_output = model.encoder(x, x_len)
+    state = model.decoder.init_state(enc_output, x_len)
     y = torch.unsqueeze(torch.tensor([tgt_vocab['<bos>']], dtype=torch.long, device=device), dim=0)
     output_seq = []
     for i in range(num_steps):
-        with torch.no_grad():
-            output, state = model.decoder(y, state)
+        output, state = model.decoder(y, state)
         y = output.argmax(dim=2)
         y_pred = y.squeeze(dim=0).type(torch.int32).item()
         if y_pred == tgt_vocab["<eos>"]:
@@ -82,7 +80,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
 batch_size = 64
 len_sequence = 20
 lr = 0.005
-n_epochs = 30
+n_epochs = 50
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
 print(len(src_vocab))
@@ -91,17 +89,23 @@ print(len(tgt_vocab))
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
 encoder = TransformerEncoder(
-    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, norm_shape=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(src_vocab), num_layers = 4
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(src_vocab), num_layers = 2
 )
 decoder = TransformerDecoder(
-    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, norm_shape=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(tgt_vocab), num_layers = 4
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(tgt_vocab), num_layers = 2
 )
 model = S2SEncoderDecoder(encoder, decoder)
-# train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
+train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
 PATH = "model_att.pt"
-# torch.save(model.state_dict(), PATH)
+torch.save(model.state_dict(), PATH)
 
-model.load_state_dict(torch.load(PATH, map_location=device))
+# model.load_state_dict(torch.load(PATH, map_location=device))
+
+
+# sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
+# test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
+
+
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück."]
@@ -110,7 +114,7 @@ model.load_state_dict(torch.load(PATH, map_location=device))
 # for sentence in sentences_preprocessed:
 #     sentence_predicted = predict_sentence(model, sentence, src_vocab, tgt_vocab, len_sequence, device)
 #     predictions.append(sentence_predicted)
-
+# print("abc")
 # references = [[nltk.tokenize.word_tokenize(sent.lower())] for sent in true_trans_preprocessed]
 # candidates = [nltk.tokenize.word_tokenize(sent.lower()) for sent in predictions]
 # score = corpus_bleu(references, candidates)
