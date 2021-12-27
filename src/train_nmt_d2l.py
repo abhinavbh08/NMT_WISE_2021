@@ -85,6 +85,8 @@ lr = 0.005
 n_epochs = 30
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
+print(len(src_vocab))
+print(len(tgt_vocab))
 # encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
@@ -95,11 +97,11 @@ decoder = TransformerDecoder(
     query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, norm_shape=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(tgt_vocab), num_layers = 4
 )
 model = S2SEncoderDecoder(encoder, decoder)
-train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
+# train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
 PATH = "model_att.pt"
-torch.save(model.state_dict(), PATH)
+# torch.save(model.state_dict(), PATH)
 
-# model.load_state_dict(torch.load(PATH))
+model.load_state_dict(torch.load(PATH, map_location=device))
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück."]
