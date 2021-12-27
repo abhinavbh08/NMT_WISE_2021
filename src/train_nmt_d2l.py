@@ -80,7 +80,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
 batch_size = 64
 len_sequence = 20
 lr = 0.005
-n_epochs = 50
+n_epochs = 200
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
 print(len(src_vocab))
@@ -106,9 +106,9 @@ torch.save(model.state_dict(), PATH)
 # test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
 
 
-# sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number."]
+# sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
 # sentences_preprocessed = [sentence for sentence in sentences]
-# true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück."]
+# true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
 # predictions = []
 # for sentence in sentences_preprocessed:
