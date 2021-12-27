@@ -6,11 +6,17 @@ from torch.utils import data
 import nltk
 
 def read_data(data_name="php"):
+    data_path_en_kaggle = "/kaggle/input/deentxt/train.en"
+    data_path_de_kaggle = "/kaggle/input/deentxt/train.de"
+
+    data_path_en = "data/de-en.txt/train.en"
+    data_path_de = "data/de-en.txt/train.de"
+
     if data_name=="php":
-        with open("data/de-en.txt/train.en", "r") as file:
+        with open(data_path_en_kaggle, "r") as file:
             data_en = file.read().split("\n")[:-1]
 
-        with open("data/de-en.txt/train.de", "r") as file:
+        with open(data_path_de_kaggle, "r") as file:
             data_de = file.read().split("\n")[:-1]        
     else:
         with open("data/fra-eng/fra1_train.txt", "r") as file:
@@ -41,10 +47,16 @@ def read_data(data_name="php"):
 def read_test_data(data_name):
     source, target = [], []
 
-    if data_name=="php":        
-        with open("data/de-en.txt/test.en", "r") as file:
+    data_path_en_kaggle = "/kaggle/input/deentxt/test.en"
+    data_path_de_kaggle = "/kaggle/input/deentxt/test.de"
+
+    data_path_en = "data/de-en.txt/test.en" 
+    data_path_de = "data/de-en.txt/test.de" 
+
+    if data_name=="php":
+        with open(data_path_en_kaggle, "r") as file:
             data_en = file.read().split("\n")[:-1]
-        with open("data/de-en.txt/test.de", "r") as file:
+        with open(data_path_de_kaggle, "r") as file:
             data_de = file.read().split("\n")[:-1]        
         source, target = data_en, data_de
     else:

@@ -81,6 +81,7 @@ batch_size = 64
 len_sequence = 20
 lr = 0.005
 n_epochs = 200
+print(n_epochs)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
 print(len(src_vocab))
