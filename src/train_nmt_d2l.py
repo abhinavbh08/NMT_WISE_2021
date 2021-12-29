@@ -79,7 +79,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
 # num_layers = 1
 batch_size = 64
 len_sequence = 20
-lr = 0.005
+lr = 0.0008
 n_epochs = 100
 print(n_epochs)
 
