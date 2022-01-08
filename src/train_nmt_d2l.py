@@ -80,7 +80,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
 batch_size = 64
 len_sequence = 20
 lr = 0.0008
-n_epochs = 80
+n_epochs = 20
 print(n_epochs)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
