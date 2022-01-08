@@ -112,12 +112,19 @@ class TransformerEncoderBlock(nn.Module):
         super(TransformerEncoderBlock, self).__init__(**kwargs)
         self.attention = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
         self.l_norm1 = LNorm(norm_shape, dropout)
-        self.fully_connected = FFNs(ffn_input, ffn_hidden, hidden_size)
+        # self.fully_connected = FFNs(ffn_input, ffn_hidden, hidden_size)
+        self.first_ffl = nn.Linear(ffn_input, ffn_hidden)
+        self.relu = nn.ReLU()
+        self.second_ffl = nn.Linear(ffn_hidden, hidden_size)
         self.l_norm2 = LNorm(norm_shape, dropout)
 
     def forward(self, x, valid_lens):
-        x = self.l_norm1(x, self.attention(x, x, x, valid_lens))
-        return self.l_norm2(x, self.fully_connected(x))
+        attn_op = self.attention(x, x, x, valid_lens)
+        x = self.l_norm1(x, attn_op)
+        ffn_op = self.second_ffl(self.relu(self.first_ffl(x)))
+        return self.l_norm2(x, ffn_op)
+        # x = self.l_norm1(x, self.attention(x, x, x, valid_lens))
+        # return self.l_norm2(x, self.fully_connected(x))
 
 
 class TransformerEncoder(nn.Module):
@@ -147,7 +154,10 @@ class Transformerdecoderblock(nn.Module):
         self.l_norm1 = LNorm(norm_shape, dropout)
         self.att2 = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
         self.l_norm2 = LNorm(norm_shape, dropout)
-        self.fully_connected = FFNs(ffn_input, ffn_hidden, hidden_size)
+        self.first_ffl = nn.Linear(ffn_input, ffn_hidden)
+        self.relu = nn.ReLU()
+        self.second_ffl = nn.Linear(ffn_hidden, hidden_size)
+        self.l_norm2 = LNorm(norm_shape, dropout)
         self.l_norm3 = LNorm(norm_shape, dropout)
 
     def forward(self, x, state):
@@ -164,11 +174,11 @@ class Transformerdecoderblock(nn.Module):
         else:
             dec_valid_lens = None
 
-        x_att = self.att1(x, keys, keys, dec_valid_lens)
-        y = self.l_norm1(x, x_att)
-        y_att = self.att2(y, enc_outputs, enc_outputs, enc_valid_lens)
-        z = self.l_norm2(y, y_att)
-        z_ffn = self.fully_connected(z)
+        op_att1 = self.att1(x, keys, keys, dec_valid_lens)
+        y = self.l_norm1(x, op_att1)
+        op_att2 = self.att2(y, enc_outputs, enc_outputs, enc_valid_lens)
+        z = self.l_norm2(y, op_att2)
+        z_ffn = self.second_ffl(self.relu(self.first_ffl(z)))
         return self.l_norm3(z, z_ffn), state
 
 class TransformerDecoder(nn.Module):
