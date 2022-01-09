@@ -6,6 +6,7 @@ from torch.utils import data
 import nltk
 
 def read_data(data_name="php"):
+    # Data paths if training models on kaggle kernels for better gpus
     data_path_en_kaggle = "/kaggle/input/deentxt/train.en"
     data_path_de_kaggle = "/kaggle/input/deentxt/train.de"
 
@@ -13,15 +14,16 @@ def read_data(data_name="php"):
     data_path_de = "data/de-en.txt/train.de"
 
     if data_name=="php":
-        with open(data_path_en_kaggle, "r") as file:
+        with open(data_path_en, "r") as file:
             data_en = file.read().split("\n")[:-1]
 
-        with open(data_path_de_kaggle, "r") as file:
+        with open(data_path_de, "r") as file:
             data_de = file.read().split("\n")[:-1]        
     else:
         with open("data/fra-eng/fra1_train.txt", "r") as file:
             return file.read()
-    
+
+    print(len(data_en), len(data_de))
     return data_en, data_de
 
 # raw_text = read_data(data_name="php")
@@ -54,9 +56,9 @@ def read_test_data(data_name):
     data_path_de = "data/de-en.txt/test.de" 
 
     if data_name=="php":
-        with open(data_path_en_kaggle, "r") as file:
+        with open(data_path_en, "r") as file:
             data_en = file.read().split("\n")[:-1]
-        with open(data_path_de_kaggle, "r") as file:
+        with open(data_path_de, "r") as file:
             data_de = file.read().split("\n")[:-1]        
         source, target = data_en, data_de
     else:
