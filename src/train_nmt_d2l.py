@@ -78,7 +78,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
 # hidden_size = 200
 # num_layers = 1
 batch_size = 64
-len_sequence = 20
+len_sequence = 30
 lr = 0.0008
 n_epochs = 50
 print(n_epochs)
