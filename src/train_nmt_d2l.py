@@ -46,8 +46,15 @@ def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_prepr
     score = corpus_bleu(references, candidates)
     print(score)
 
-def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
+def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device):
     loss_function = MaskedCELoss()
+
+    def initialize_weights(m):
+        if hasattr(m, 'weight') and m.weight.dim() > 1:
+            nn.init.xavier_uniform_(m.weight.data)
+
+    model.apply(initialize_weights)
+
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     model.train()
@@ -64,24 +71,25 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab,device):
             output, state = model(x, decoder_input, x_len)
             l = loss_function(output, y, y_len)
             l.sum().backward()    
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             with torch.no_grad():
                 running_loss += l.sum().item()
                 batch_loss = l.sum().item() / x.size(0)
 
             # print(epoch, batch_idx, batch_loss)
-        test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
+        # test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
         print(f"Epoch_Loss, {epoch}, {running_loss / len(data_iter.dataset)}")
 
 
 # embedding_size = 100
 # hidden_size = 200
 # num_layers = 1
-batch_size = 64
+batch_size = 128
 len_sequence = 30
-lr = 0.0008
+lr = 0.0005
 n_epochs = 50
-print(n_epochs)
+print(n_epochs, lr)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
 print(len(src_vocab))
@@ -90,10 +98,10 @@ print(len(tgt_vocab))
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
 encoder = TransformerEncoder(
-    query=64, key=64, value=64, hidden_size=64, num_head=4, dropout=0.1, norm_shape=[64], ffn_input=64, ffn_hidden=128, vocab_size=len(src_vocab), num_layers = 4
+    query=256, key=256, value=256, hidden_size=256, num_head=8, dropout=0.1, norm_shape=[256], ffn_input=256, ffn_hidden=512, vocab_size=len(src_vocab), num_layers = 3
 )
 decoder = TransformerDecoder(
-    query=64, key=64, value=64, hidden_size=64, num_head=4, dropout=0.1, norm_shape=[64], ffn_input=64, ffn_hidden=128, vocab_size=len(tgt_vocab), num_layers = 4
+    query=256, key=256, value=256, hidden_size=256, num_head=8, dropout=0.1, norm_shape=[256], ffn_input=256, ffn_hidden=512, vocab_size=len(tgt_vocab), num_layers = 3
 )
 print("4 layers, 64 size")
 model = S2SEncoderDecoder(encoder, decoder)
@@ -109,6 +117,7 @@ torch.save(model.state_dict(), PATH)
 
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
+# sentences = ["I am fine."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]

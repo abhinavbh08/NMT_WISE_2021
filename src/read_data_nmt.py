@@ -10,15 +10,15 @@ def read_data(data_name="php"):
     data_path_en_kaggle = "/kaggle/input/deentxt/train.en"
     data_path_de_kaggle = "/kaggle/input/deentxt/train.de"
 
-    data_path_en = "data/de-en.txt/train.en"
-    data_path_de = "data/de-en.txt/train.de"
+    data_path_en = "data/de-en_deduplicated/train.en"
+    data_path_de = "data/de-en_deduplicated/train.de"
 
     if data_name=="php":
         with open(data_path_en, "r") as file:
             data_en = file.read().split("\n")[:-1]
 
         with open(data_path_de, "r") as file:
-            data_de = file.read().split("\n")[:-1]        
+            data_de = file.read().split("\n")[:-1]
     else:
         with open("data/fra-eng/fra1_train.txt", "r") as file:
             return file.read()
@@ -52,8 +52,8 @@ def read_test_data(data_name):
     data_path_en_kaggle = "/kaggle/input/deentxt/test.en"
     data_path_de_kaggle = "/kaggle/input/deentxt/test.de"
 
-    data_path_en = "data/de-en.txt/test.en" 
-    data_path_de = "data/de-en.txt/test.de" 
+    data_path_en = "data/de-en_deduplicated/test.en" 
+    data_path_de = "data/de-en_deduplicated/test.de" 
 
     if data_name=="php":
         with open(data_path_en, "r") as file:
@@ -120,8 +120,8 @@ def load_data(batch_size, num_steps):
     # preprocessed_text = preprocess_nmt(read_data())
     preprocessed_text = read_data(data_name="php")
     source, target = tokenize_data(preprocessed_text)
-    src_vocab = Vocab(source, min_freq=2, reserved_tokens=['<pad>', '<bos>', '<eos>'])
-    tgt_vocab = Vocab(target, min_freq=2, reserved_tokens=['<pad>', '<bos>', '<eos>'])
+    src_vocab = Vocab(source, min_freq=4, reserved_tokens=['<pad>', '<bos>', '<eos>'])
+    tgt_vocab = Vocab(target, min_freq=4, reserved_tokens=['<pad>', '<bos>', '<eos>'])
     src_array, src_valid_len = build_array_nmt(source, src_vocab, num_steps)
     tgt_array, tgt_valid_len = build_array_nmt(target, tgt_vocab, num_steps)
     data_arrays = (src_array, src_valid_len, tgt_array, tgt_valid_len)
