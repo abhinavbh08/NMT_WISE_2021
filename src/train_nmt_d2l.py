@@ -9,6 +9,7 @@ import math
 from read_data_nmt import truncate_pad
 from nltk.translate.bleu_score import corpus_bleu
 import nltk
+from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -37,7 +38,7 @@ def predict_sentence(model, sentence, src_vocab, tgt_vocab, num_steps, device):
 def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed):
 
     predictions = []
-    for sentence in sentences_preprocessed:
+    for sentence in tqdm(sentences_preprocessed):
         sentence_predicted = predict_sentence(model, sentence, src_vocab, tgt_vocab, len_sequence, device)
         predictions.append(sentence_predicted)
 
@@ -77,6 +78,10 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device):
                 running_loss += l.sum().item()
                 batch_loss = l.sum().item() / x.size(0)
 
+        if epoch % 10 == 9:
+            PATH = "model_att.pt"
+            torch.save(model.state_dict(), PATH)
+
             # print(epoch, batch_idx, batch_loss)
         # test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
         print(f"Epoch_Loss, {epoch}, {running_loss / len(data_iter.dataset)}")
@@ -86,10 +91,10 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device):
 # hidden_size = 200
 # num_layers = 1
 batch_size = 128
-len_sequence = 30
-lr = 0.0005
-n_epochs = 50
-print(n_epochs, lr)
+len_sequence = 60
+lr = 0.0003
+n_epochs = 60
+print(n_epochs, lr, len_sequence)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
 print(len(src_vocab))
@@ -117,13 +122,14 @@ torch.save(model.state_dict(), PATH)
 
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
-# sentences = ["I am fine."]
+# sentences = ["Please come to my house."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
 # predictions = []
 # for sentence in sentences_preprocessed:
 #     sentence_predicted = predict_sentence(model, sentence, src_vocab, tgt_vocab, len_sequence, device)
+#     print(sentence_predicted)
 #     predictions.append(sentence_predicted)
 # print("abc")
 # references = [[nltk.tokenize.word_tokenize(sent.lower())] for sent in true_trans_preprocessed]
@@ -132,3 +138,6 @@ torch.save(model.state_dict(), PATH)
 # print(score)
 # print(sentences_preprocessed, true_trans_preprocessed)
 # print(predictions)
+
+# sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
+# test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
