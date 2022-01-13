@@ -20,7 +20,10 @@ def read_data(data_name="php"):
         with open(data_path_de_kaggle, "r") as file:
             data_de = file.read().split("\n")[:-1]
     else:
-        with open("data/fra-eng/fra1_train.txt", "r") as file:
+        data_path_kaggle = "/kaggle/input/enfrdata/fra_small.txt"
+        data_path = "data/fra-eng/fra_small.txt"
+
+        with open(data_path_kaggle, "r") as file:
             return file.read()
 
     print(len(data_en), len(data_de))
@@ -62,7 +65,9 @@ def read_test_data(data_name):
             data_de = file.read().split("\n")[:-1]        
         source, target = data_en, data_de
     else:
-        with open("data/fra-eng/fra1_test.txt", "r") as file:
+        data_path_kaggle = "/kaggle/input/enfrdata/fra_small.txt"
+        data_path = "data/fra-eng/fra_small.txt"
+        with open(data_path_kaggle, "r") as file:
             data = file.read()
         preprocessed_text = data
 
@@ -117,11 +122,11 @@ def build_array_nmt(lines, vocab, num_steps):
 
 
 def load_data(batch_size, num_steps):
-    # preprocessed_text = preprocess_nmt(read_data())
-    preprocessed_text = read_data(data_name="php")
+    preprocessed_text = read_data(read_data(data_name="abc"))
+    # preprocessed_text = read_data(data_name="php")
     source, target = tokenize_data(preprocessed_text)
-    src_vocab = Vocab(source, min_freq=3, reserved_tokens=['<pad>', '<bos>', '<eos>'])
-    tgt_vocab = Vocab(target, min_freq=3, reserved_tokens=['<pad>', '<bos>', '<eos>'])
+    src_vocab = Vocab(source, min_freq=2, reserved_tokens=['<pad>', '<bos>', '<eos>'])
+    tgt_vocab = Vocab(target, min_freq=2, reserved_tokens=['<pad>', '<bos>', '<eos>'])
     src_array, src_valid_len = build_array_nmt(source, src_vocab, num_steps)
     tgt_array, tgt_valid_len = build_array_nmt(target, tgt_vocab, num_steps)
     data_arrays = (src_array, src_valid_len, tgt_array, tgt_valid_len)
@@ -129,7 +134,7 @@ def load_data(batch_size, num_steps):
     itrtr = data.DataLoader(dataset, batch_size, shuffle=True)
     return itrtr, src_vocab, tgt_vocab
 
-# train_iter, src_vocab, tgt_vocab = load_data(2, num_steps=12)
+# train_iter, src_vocab, tgt_vocab = load_data(2, num_steps=10)
 # for x, x_len, y, y_len in train_iter:
 #     print(x)
 #     print(x_len)

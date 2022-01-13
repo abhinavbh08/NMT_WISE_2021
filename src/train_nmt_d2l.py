@@ -13,26 +13,33 @@ from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def predict_sentence(model, sentence, src_vocab, tgt_vocab, num_steps, device):
+def predict_sentence(model, sentence, src_vocab, tgt_vocab, max_len, device):
 
     model.eval()
-    # src_tokens = src_vocab[sentence.lower().split(" ")] + [src_vocab["<eos>"]]
+    # get the src tokens in indexed form.
     src_tokens = src_vocab[nltk.tokenize.word_tokenize(sentence.lower())] + [src_vocab["<eos>"]]
+    # Get the lengths of the input sentence
     x_len = torch.tensor([len(src_tokens)], device=device)
-    src_tokens = truncate_pad(src_tokens, num_steps, src_vocab["<pad>"])
+    # truncate and pad the input sentence
+    src_tokens = truncate_pad(src_tokens, max_len, src_vocab["<pad>"])
+    # Creating a batch from a single input sentence.
     x = torch.unsqueeze(torch.tensor(src_tokens, dtype=torch.long, device=device), dim=0)
-    enc_output = model.encoder(x, x_len)
+    enc_output = model.encoder(x, x_len)    # (B, max_len, hidden_dim)
     state = model.decoder.init_state(enc_output, x_len)
     y = torch.unsqueeze(torch.tensor([tgt_vocab['<bos>']], dtype=torch.long, device=device), dim=0)
     output_seq = []
-    for i in range(num_steps):
-        output, state = model.decoder(y, state)
+    # Generate the output tokens one by one
+    for i in range(max_len):
+        output, state = model.decoder(y, state) # (B, 1, tgt_vocab_size)
         y = output.argmax(dim=2)
+        # Get the predicted token label.
         y_pred = y.squeeze(dim=0).type(torch.int32).item()
+        # quit if end of sentence is reached.
         if y_pred == tgt_vocab["<eos>"]:
             break
         output_seq.append(y_pred)
 
+    # Converting the output generated sequence back using target language vocabulary.
     return " ".join([tgt_vocab.idx2word[item] for item in output_seq])
 
 def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed):
@@ -47,52 +54,59 @@ def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_prepr
     score = corpus_bleu(references, candidates)
     print(score)
 
-def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device):
+def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_vocab, device):
+
+    # Masked Cross Entropy loss function.
     loss_function = MaskedCELoss()
 
     def initialize_weights(m):
         if hasattr(m, 'weight') and m.weight.dim() > 1:
             nn.init.xavier_uniform_(m.weight.data)
 
+    # Do Xavier initialisatation of the weights.
     model.apply(initialize_weights)
 
     model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    # Putting the model to train mode.
     model.train()
 
     sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
     for epoch in range(n_epochs):
         running_loss = 0.0
         model.train()
-        for batch_idx, batch in enumerate(data_iter):
+        for batch_idx, batch in enumerate(data_loader):
             optimizer.zero_grad()
             x, x_len, y, y_len = [item.to(device) for item in batch]
-            bos = torch.tensor([tgt_vocab["<bos>"]] * y.shape[0], device=device).reshape(-1, 1)
-            decoder_input = torch.cat([bos, y[:, :-1]], 1)
-            output, state = model(x, decoder_input, x_len)
-            l = loss_function(output, y, y_len)
-            l.sum().backward()    
+            bos_token = torch.tensor([tgt_vocab["<bos>"]] * y.shape[0], device=device).reshape(-1, 1)
+            # Append beginning of sentence (BOS) to the input to the decoder so that input to the decoder is shifted by one to the right.
+            decoder_input = torch.cat([bos_token, y[:, :-1]], 1)
+            output_model, state = model(x, decoder_input, x_len)
+            l = loss_function(output_model, y, y_len)
+            # Backpropagate the loss
+            l.sum().backward() 
+            # Do gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             with torch.no_grad():
                 running_loss += l.sum().item()
-                batch_loss = l.sum().item() / x.size(0)
 
+        # Save model every 19th epoch.
         if epoch % 20 == 19:
             PATH = "model_att.pt"
             torch.save(model.state_dict(), PATH)
 
             # print(epoch, batch_idx, batch_loss)
         # test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
-        print(f"Epoch_Loss, {epoch}, {running_loss / len(data_iter.dataset)}")
+        print(f"Epoch_Loss, {epoch}, {running_loss / len(data_loader.dataset)}")
 
 
 # embedding_size = 100
 # hidden_size = 200
 # num_layers = 1
 batch_size = 64
-len_sequence = 30
-lr = 0.0005
+len_sequence = 10
+lr = 0.005
 n_epochs = 200
 print(n_epochs, lr, len_sequence)
 
@@ -103,10 +117,10 @@ print(len(tgt_vocab))
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
 encoder = TransformerEncoder(
-    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, norm_shape=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(src_vocab), num_layers = 3
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(src_vocab), num_layers = 2
 )
 decoder = TransformerDecoder(
-    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, norm_shape=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(tgt_vocab), num_layers = 3
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(tgt_vocab), num_layers = 2
 )
 print("4 layers, 64 size")
 model = S2SEncoderDecoder(encoder, decoder)
@@ -122,7 +136,7 @@ torch.save(model.state_dict(), PATH)
 
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
-# sentences = ["The feel of the steering wheel is also exquisite."]
+# sentences = ["The girl is very beautiful and very nice."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
