@@ -157,7 +157,6 @@ class Transformerdecoderblock(nn.Module):
         self.first_ffl = nn.Linear(ffn_input, ffn_hidden)
         self.relu = nn.ReLU()
         self.second_ffl = nn.Linear(ffn_hidden, hidden_size)
-        self.l_norm2 = LNorm(norm_shape, dropout)
         self.l_norm3 = LNorm(norm_shape, dropout)
 
     def forward(self, x, state):

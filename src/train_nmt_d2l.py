@@ -78,7 +78,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device):
                 running_loss += l.sum().item()
                 batch_loss = l.sum().item() / x.size(0)
 
-        if epoch % 10 == 9:
+        if epoch % 20 == 19:
             PATH = "model_att.pt"
             torch.save(model.state_dict(), PATH)
 
@@ -93,7 +93,7 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device):
 batch_size = 64
 len_sequence = 30
 lr = 0.0005
-n_epochs = 80
+n_epochs = 200
 print(n_epochs, lr, len_sequence)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
@@ -122,7 +122,7 @@ torch.save(model.state_dict(), PATH)
 
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
-# sentences = ["According to the opposition, this result seems too far."]
+# sentences = ["The feel of the steering wheel is also exquisite."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
