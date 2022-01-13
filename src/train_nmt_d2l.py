@@ -90,10 +90,10 @@ def train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device):
 # embedding_size = 100
 # hidden_size = 200
 # num_layers = 1
-batch_size = 128
-len_sequence = 60
-lr = 0.0003
-n_epochs = 60
+batch_size = 64
+len_sequence = 30
+lr = 0.0005
+n_epochs = 80
 print(n_epochs, lr, len_sequence)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
@@ -103,10 +103,10 @@ print(len(tgt_vocab))
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
 encoder = TransformerEncoder(
-    query=256, key=256, value=256, hidden_size=256, num_head=8, dropout=0.1, norm_shape=[256], ffn_input=256, ffn_hidden=512, vocab_size=len(src_vocab), num_layers = 3
+    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, norm_shape=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(src_vocab), num_layers = 3
 )
 decoder = TransformerDecoder(
-    query=256, key=256, value=256, hidden_size=256, num_head=8, dropout=0.1, norm_shape=[256], ffn_input=256, ffn_hidden=512, vocab_size=len(tgt_vocab), num_layers = 3
+    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, norm_shape=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(tgt_vocab), num_layers = 3
 )
 print("4 layers, 64 size")
 model = S2SEncoderDecoder(encoder, decoder)
@@ -122,7 +122,7 @@ torch.save(model.state_dict(), PATH)
 
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
-# sentences = ["Please come to my house."]
+# sentences = ["According to the opposition, this result seems too far."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
