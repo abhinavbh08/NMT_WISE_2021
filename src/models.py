@@ -93,10 +93,10 @@ class S2SAttentionDecoder(nn.Module):
         return outputs, [enc_outputs, hidden_state, enc_valid_lengths]
 
 
-class S2SEncoderDecoder(nn.Module):
+class TransformerEncoderDecoder(nn.Module):
 
     def __init__(self, encoder, decoder, **kwargs):
-        super(S2SEncoderDecoder, self).__init__()
+        super(TransformerEncoderDecoder, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
 
@@ -134,8 +134,8 @@ class TransformerEncoderBlock(nn.Module):
 
 class TransformerEncoder(nn.Module):
     """Transformer encoder composed of multiple transformer encoder blocks."""
-    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, vocab_size, num_layers, **kwargs):
-        super(TransformerEncoder, self).__init__(**kwargs)
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, vocab_size, num_layers):
+        super(TransformerEncoder, self).__init__()
         self.hidden_size = hidden_size
         # Initialise word embedding matrix
         self.embedding = nn.Embedding(vocab_size, hidden_size)
@@ -146,6 +146,7 @@ class TransformerEncoder(nn.Module):
             self.blocks.add_module(str(i), TransformerEncoderBlock(query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden))
 
     def forward(self, x, valid_lens, *args):
+        # Pass word embedding to the positional embedding class object so that they get added together.
         x = self.pos_encoding(self.embedding(x) * math.sqrt(self.hidden_size))
         # Loop over all the blocks passing one input to the next.
         for i, block in enumerate(self.blocks):
@@ -155,8 +156,8 @@ class TransformerEncoder(nn.Module):
 
 class Transformerdecoderblock(nn.Module):
     """Single Transformer decoder block."""
-    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, i, **kwargs):
-        super(Transformerdecoderblock, self).__init__(**kwargs)
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, i):
+        super(Transformerdecoderblock, self).__init__()
         self.i = i
         # Decoder self attention layer
         self.dec_self_att = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
@@ -183,7 +184,7 @@ class Transformerdecoderblock(nn.Module):
             bs, max_len, dim = x.shape
             dec_valid_lens = torch.arange(1, max_len + 1, device=x.device).repeat(bs, 1)    # (B, max_len)
         else:
-            dec_valid_lens = None # No need for maskind during predicition since we do not hacve future tokens.
+            dec_valid_lens = None # No need for maskind during predicition since we do not have future tokens.
 
         # Passinf the input of decoder to the decoder self attention block
         op_att1 = self.dec_self_att(x, keys, keys, dec_valid_lens)

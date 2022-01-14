@@ -1,6 +1,6 @@
 from torch import optim
-from read_data_nmt import load_data, read_test_data
-from models import S2SAttentionDecoder, S2SEncoder, S2SDecoder, S2SEncoderDecoder, TransformerEncoder, TransformerDecoder
+from read_data_nmt import load_data, read_val_data
+from models import S2SAttentionDecoder, S2SEncoder, S2SDecoder, TransformerEncoderDecoder, TransformerEncoder, TransformerDecoder
 from loss import MaskedCELoss
 import torch
 import torch.nn as nn
@@ -39,7 +39,7 @@ def predict_sentence(model, sentence, src_vocab, tgt_vocab, max_len, device):
             break
         output_seq.append(y_pred)
 
-    # Converting the output generated sequence back using target language vocabulary.
+    # Converting the output generated sequence to words using target language vocabulary.
     return " ".join([tgt_vocab.idx2word[item] for item in output_seq])
 
 def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed):
@@ -71,7 +71,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
     # Putting the model to train mode.
     model.train()
 
-    # sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
+    sentences_preprocessed, true_trans_preprocessed = read_val_data(data_name="php")
     for epoch in range(n_epochs):
         running_loss = 0.0
         model.train()
@@ -82,6 +82,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
             # Append beginning of sentence (BOS) to the input to the decoder so that input to the decoder is shifted by one to the right.
             decoder_input = torch.cat([bos_token, y[:, :-1]], 1)
             output_model, state = model(x, decoder_input, x_len)
+            # Passing the output of the model to the loss function.
             l = loss_function(output_model, y, y_len)
             # Backpropagate the loss
             l.sum().backward() 
@@ -96,8 +97,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
             PATH = "model_att.pt"
             torch.save(model.state_dict(), PATH)
 
-            # print(epoch, batch_idx, batch_loss)
-        # test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
+        test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
         print(f"Epoch_Loss, {epoch}, {running_loss / len(data_loader.dataset)}")
 
 
@@ -105,9 +105,9 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # hidden_size = 200
 # num_layers = 1
 batch_size = 64
-len_sequence = 10
-lr = 0.005
-n_epochs = 200
+len_sequence = 15
+lr = 0.0008
+n_epochs = 60
 print(n_epochs, lr, len_sequence)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
@@ -117,13 +117,13 @@ print(len(tgt_vocab))
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
 encoder = TransformerEncoder(
-    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, lnorm_size=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(src_vocab), num_layers = 2
+    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, lnorm_size=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(src_vocab), num_layers = 2
 )
 decoder = TransformerDecoder(
-    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, lnorm_size=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(tgt_vocab), num_layers = 2
+    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, lnorm_size=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(tgt_vocab), num_layers = 2
 )
 print("4 layers, 64 size")
-model = S2SEncoderDecoder(encoder, decoder)
+model = TransformerEncoderDecoder(encoder, decoder)
 train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
 PATH = "model_att.pt"
 torch.save(model.state_dict(), PATH)
