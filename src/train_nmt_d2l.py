@@ -136,7 +136,7 @@ torch.save(model.state_dict(), PATH)
 
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
-# sentences = ["The girl is very beautiful and very nice."]
+# sentences = ["This is good."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]

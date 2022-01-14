@@ -13,6 +13,7 @@ class PositionalEncoding(nn.Module):
         self.pos[:, :, 1::2] = torch.cos(x)
 
     def forward(self, x):
+        # Add positional embeddings to the word embeddings obtained as input.
         x = x + self.pos[:, :x.shape[1], :].to(x.device)
         return self.dropout(x)
 

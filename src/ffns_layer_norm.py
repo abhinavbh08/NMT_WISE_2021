@@ -20,7 +20,7 @@ class LNorm(nn.Module):
         self.layer_norm = nn.LayerNorm(normalized_shape)
 
     def forward(self, x, y):
-        return self.layer_norm(self.dropout(y) + x)
+        return self.layer_norm(x + self.dropout(y))
 
 # add_norm = LNorm([3, 4], 0.5)
 # add_norm.eval()

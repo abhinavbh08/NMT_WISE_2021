@@ -108,36 +108,42 @@ class S2SEncoderDecoder(nn.Module):
 
 class TransformerEncoderBlock(nn.Module):
     """Single transformer encoder block"""
-    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, **kwargs):
-        super(TransformerEncoderBlock, self).__init__(**kwargs)
-        self.attention = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
-        self.l_norm1 = LNorm(norm_shape, dropout)
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden):
+        # In a transformer the query, key, value, hidden_size, ffn_input, all will be of the same size/dimension.
+        super(TransformerEncoderBlock, self).__init__()
+
+        # Encoder self attention.
+        self.self_attention = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
+        self.l_norm_attention = LNorm(lnorm_size, dropout)
+
+        # Encoder feed forward layer.
         self.first_ffl = nn.Linear(ffn_input, ffn_hidden)
         self.relu = nn.ReLU()
         self.second_ffl = nn.Linear(ffn_hidden, hidden_size)
-        self.l_norm2 = LNorm(norm_shape, dropout)
+        self.l_norm_ffn = LNorm(lnorm_size, dropout)
 
     def forward(self, x, valid_lens):
-        # passing input through the self - attention layer
-        attn_op = self.attention(x, x, x, valid_lens)
-        x = self.l_norm1(x, attn_op)
+        # passing input through the self - attention layer and layer normalisation
+        attn_op = self.self_attention(x, x, x, valid_lens)
+        y = self.l_norm_attention(x, attn_op)
 
         # passing output of layer normalisation to the feed forward layer.
-        ffn_op = self.second_ffl(self.relu(self.first_ffl(x)))
-        return self.l_norm2(x, ffn_op)
+        ffn_op = self.second_ffl(self.relu(self.first_ffl(y)))
+        return self.l_norm_ffn(y, ffn_op)
 
 
 class TransformerEncoder(nn.Module):
     """Transformer encoder composed of multiple transformer encoder blocks."""
-    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, vocab_size, num_layers, **kwargs):
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, vocab_size, num_layers, **kwargs):
         super(TransformerEncoder, self).__init__(**kwargs)
         self.hidden_size = hidden_size
+        # Initialise word embedding matrix
         self.embedding = nn.Embedding(vocab_size, hidden_size)
         # Initialise the position embedding matrix
         self.pos_encoding = PositionalEncoding(hidden_size, dropout)
         self.blocks = nn.Sequential()
         for i in range(num_layers):
-            self.blocks.add_module(str(i), TransformerEncoderBlock(query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden))
+            self.blocks.add_module(str(i), TransformerEncoderBlock(query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden))
 
     def forward(self, x, valid_lens, *args):
         x = self.pos_encoding(self.embedding(x) * math.sqrt(self.hidden_size))
@@ -149,17 +155,22 @@ class TransformerEncoder(nn.Module):
 
 class Transformerdecoderblock(nn.Module):
     """Single Transformer decoder block."""
-    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, i, **kwargs):
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, i, **kwargs):
         super(Transformerdecoderblock, self).__init__(**kwargs)
         self.i = i
-        self.att1 = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
-        self.l_norm1 = LNorm(norm_shape, dropout)
-        self.att2 = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
-        self.l_norm2 = LNorm(norm_shape, dropout)
+        # Decoder self attention layer
+        self.dec_self_att = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
+        self.l_norm_dec_self_attention = LNorm(lnorm_size, dropout)
+
+        # ENcoder decoder attention layer
+        self.enc_dec_attention = MultiHeadAttention(query, key, value, hidden_size, num_head, dropout)
+        self.l_norm_enc_dec_att = LNorm(lnorm_size, dropout)
+
+        # feed forward layer
         self.first_ffl = nn.Linear(ffn_input, ffn_hidden)
         self.relu = nn.ReLU()
         self.second_ffl = nn.Linear(ffn_hidden, hidden_size)
-        self.l_norm3 = LNorm(norm_shape, dropout)
+        self.l_norm_fnn = LNorm(lnorm_size, dropout)
 
     def forward(self, x, state):
         enc_outputs, enc_valid_lens = state[0], state[1]
@@ -174,28 +185,27 @@ class Transformerdecoderblock(nn.Module):
         else:
             dec_valid_lens = None # No need for maskind during predicition since we do not hacve future tokens.
 
-        # Passinf the input of decoder to the decoder self attention block.
-        op_att1 = self.att1(x, keys, keys, dec_valid_lens)
-        y = self.l_norm1(x, op_att1)
-        # Passing the output of previous block to the encoder  decoder attention block.
-        op_att2 = self.att2(y, enc_outputs, enc_outputs, enc_valid_lens)
-        z = self.l_norm2(y, op_att2)        
-        # Passing the output of previous block to the feedforwrad layer.
-        z_ffn = self.second_ffl(self.relu(self.first_ffl(z)))
-        return self.l_norm3(z, z_ffn), state
+        # Passinf the input of decoder to the decoder self attention block
+        op_att1 = self.dec_self_att(x, keys, keys, dec_valid_lens)
+        y = self.l_norm_dec_self_attention(x, op_att1)
+        # Passing the output of layer_ normalisation to the encoder  decoder attention block.
+        op_att2 = self.enc_dec_attention(y, enc_outputs, enc_outputs, enc_valid_lens)
+        z = self.l_norm_enc_dec_att(y, op_att2)        
+        # Passing the output of previous layer normalisation to the feedforward layer.
+        op_ffn = self.second_ffl(self.relu(self.first_ffl(z)))
+        return self.l_norm_fnn(z, op_ffn), state
 
 class TransformerDecoder(nn.Module):
     """Transformer decoder consisting of many transformer decoder blocks."""
-    def __init__(self, query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, vocab_size, num_layers, **kwargs):
-        super(TransformerDecoder, self).__init__(**kwargs)
+    def __init__(self, query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, vocab_size, num_layers):
+        super(TransformerDecoder, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.embedding = nn.Embedding(vocab_size, hidden_size)
         self.pos_encoding = PositionalEncoding(hidden_size, dropout)
         self.blocks = nn.Sequential()
         for i in range(num_layers):
-            self.blocks.add_module(str(i), Transformerdecoderblock(
-                    query, key, value, hidden_size, num_head, dropout, norm_shape, ffn_input, ffn_hidden, i))
+            self.blocks.add_module(str(i), Transformerdecoderblock(query, key, value, hidden_size, num_head, dropout, lnorm_size, ffn_input, ffn_hidden, i))
         # Final linear layer for converting hidden dimension to vocab size.
         self.linear = nn.Linear(hidden_size, vocab_size)
 
@@ -203,7 +213,7 @@ class TransformerDecoder(nn.Module):
         return [enc_outputs, enc_valid_lens, [None] * self.num_layers]
 
     def forward(self, x, state):
-        # Adding word embedding with the positional embedding.
+        # Pass word embedding to the positional embedding class object so that they get added together.
         x = self.pos_encoding(self.embedding(x) * math.sqrt(self.hidden_size))
         for block in self.blocks:
             x, state = block(x, state)
