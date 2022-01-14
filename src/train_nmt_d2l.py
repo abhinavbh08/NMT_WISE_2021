@@ -71,7 +71,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
     # Putting the model to train mode.
     model.train()
 
-    sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
+    # sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
     for epoch in range(n_epochs):
         running_loss = 0.0
         model.train()
@@ -117,10 +117,10 @@ print(len(tgt_vocab))
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
 encoder = TransformerEncoder(
-    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(src_vocab), num_layers = 2
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, lnorm_size=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(src_vocab), num_layers = 2
 )
 decoder = TransformerDecoder(
-    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, norm_shape=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(tgt_vocab), num_layers = 2
+    query=32, key=32, value=32, hidden_size=32, num_head=4, dropout=0.1, lnorm_size=[32], ffn_input=32, ffn_hidden=64, vocab_size=len(tgt_vocab), num_layers = 2
 )
 print("4 layers, 64 size")
 model = S2SEncoderDecoder(encoder, decoder)

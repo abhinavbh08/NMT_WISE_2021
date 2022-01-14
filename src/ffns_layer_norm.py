@@ -14,10 +14,10 @@ class FFNs(nn.Module):
 
 
 class LNorm(nn.Module):
-    def __init__(self, normalized_shape, dropout, **kwargs):
+    def __init__(self, lnorm_size, dropout, **kwargs):
         super(LNorm, self).__init__(**kwargs)
         self.dropout = nn.Dropout(dropout)
-        self.layer_norm = nn.LayerNorm(normalized_shape)
+        self.layer_norm = nn.LayerNorm(lnorm_size)
 
     def forward(self, x, y):
         return self.layer_norm(x + self.dropout(y))
