@@ -52,8 +52,8 @@ def read_data(data_name="php"):
 def read_val_data(data_name):
     source, target = [], []
 
-    data_path_en_kaggle = "/kaggle/input/dedup/val.en"
-    data_path_de_kaggle = "/kaggle/input/dedup/val.de"
+    data_path_en_kaggle = "/kaggle/input/dedupdata/val.en"
+    data_path_de_kaggle = "/kaggle/input/dedupdata/val.de"
 
     data_path_en = "data/de-en_deduplicated/val.en" 
     data_path_de = "data/de-en_deduplicated/val.de" 
