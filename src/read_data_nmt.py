@@ -7,8 +7,8 @@ import nltk
 
 def read_data(data_name="php"):
     # Data paths if training models on kaggle kernels for better gpus
-    data_path_en_kaggle = "/kaggle/input/deentxt/train.en"
-    data_path_de_kaggle = "/kaggle/input/deentxt/train.de"
+    data_path_en_kaggle = "/kaggle/input/dedupdata/train.en"
+    data_path_de_kaggle = "/kaggle/input/dedupdata/train.de"
 
     data_path_en = "data/de-en_deduplicated/train.en"
     data_path_de = "data/de-en_deduplicated/train.de"
@@ -52,8 +52,8 @@ def read_data(data_name="php"):
 def read_val_data(data_name):
     source, target = [], []
 
-    data_path_en_kaggle = "/kaggle/input/deentxt/val.en"
-    data_path_de_kaggle = "/kaggle/input/deentxt/val.de"
+    data_path_en_kaggle = "/kaggle/input/dedup/val.en"
+    data_path_de_kaggle = "/kaggle/input/dedup/val.de"
 
     data_path_en = "data/de-en_deduplicated/val.en" 
     data_path_de = "data/de-en_deduplicated/val.de" 
