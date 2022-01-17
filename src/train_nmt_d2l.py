@@ -59,12 +59,9 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
     # Masked Cross Entropy loss function.
     loss_function = MaskedCELoss()
 
-    def initialize_weights(m):
-        if hasattr(m, 'weight') and m.weight.dim() > 1:
-            nn.init.xavier_uniform_(m.weight.data)
-
-    # Do Xavier initialisatation of the weights.
-    model.apply(initialize_weights)
+    for p in model.parameters():
+        if p.dim() > 1:
+            nn.init.xavier_uniform_(p)
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -104,7 +101,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # embedding_size = 100
 # hidden_size = 200
 # num_layers = 1
-batch_size = 64
+batch_size = 128
 len_sequence = 20
 lr = 0.0001
 n_epochs = 200
@@ -116,13 +113,13 @@ print(len(tgt_vocab))
 # encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
-ss = 64
-hs = ss * 2
+ss = 512
+hs = ss
 encoder = TransformerEncoder(
-    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 2
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=8, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 3
 )
 decoder = TransformerDecoder(
-    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(tgt_vocab), num_layers = 2
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=8, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(tgt_vocab), num_layers = 3
 )
 print("4 layers, 128 size")
 model = TransformerEncoderDecoder(encoder, decoder)
