@@ -106,7 +106,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # num_layers = 1
 batch_size = 256
 len_sequence = 20
-lr = 0.00005
+lr = 0.00001
 n_epochs = 200
 print(n_epochs, lr, len_sequence)
 
@@ -116,11 +116,13 @@ print(len(tgt_vocab))
 # encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
+ss = 64
+hs = ss * 2
 encoder = TransformerEncoder(
-    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, lnorm_size=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(src_vocab), num_layers = 2
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 2
 )
 decoder = TransformerDecoder(
-    query=128, key=128, value=128, hidden_size=128, num_head=4, dropout=0.1, lnorm_size=[128], ffn_input=128, ffn_hidden=256, vocab_size=len(tgt_vocab), num_layers = 2
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(tgt_vocab), num_layers = 2
 )
 print("4 layers, 128 size")
 model = TransformerEncoderDecoder(encoder, decoder)
