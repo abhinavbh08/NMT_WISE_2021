@@ -102,7 +102,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # hidden_size = 200
 # num_layers = 1
 batch_size = 128
-len_sequence = 20
+len_sequence = 30
 lr = 0.0001
 n_epochs = 200
 print(n_epochs, lr, len_sequence)
@@ -136,7 +136,7 @@ torch.save(model.state_dict(), PATH)
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
 
-# sentences = ["Best of luck to you."]
+# sentences = ["The man is a boy."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
