@@ -42,6 +42,8 @@ def predict_sentence(model, sentence, src_vocab, tgt_vocab, max_len, device):
     # Converting the output generated sequence to words using target language vocabulary.
     return " ".join([tgt_vocab.idx2word[item] for item in output_seq])
 
+
+
 def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed):
 
     predictions = []
@@ -102,7 +104,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # hidden_size = 200
 # num_layers = 1
 batch_size = 128
-len_sequence = 30
+len_sequence = 50
 lr = 0.0001
 n_epochs = 200
 print(n_epochs, lr, len_sequence)
@@ -136,7 +138,7 @@ torch.save(model.state_dict(), PATH)
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
 
-# sentences = ["The man is a boy."]
+# sentences = ["The man is walking his dog"]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
