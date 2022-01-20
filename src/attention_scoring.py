@@ -61,7 +61,7 @@ class DotProductAttention(nn.Module):
         d = queries.shape[-1]
         scores = torch.bmm(queries, keys.transpose(1, 2)) / math.sqrt(d)
         self.attention_weights = masked_softmax(scores, valid_lens)
-        return torch.bmm(self.dropout(self.attention_weights), values)
+        return torch.bmm(self.attention_weights, values)
 
 # queries, keys, values = torch.normal(0, 1, (2, 6, 10)), torch.ones((2, 6, 10)), torch.ones((2, 6, 10))
 # valid_lens = torch.tensor([2, 3, 4, 5, 6])
