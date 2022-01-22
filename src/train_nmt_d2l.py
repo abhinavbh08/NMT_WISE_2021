@@ -168,11 +168,11 @@ decoder = TransformerDecoder(
 )
 print("4 layers, 128 size")
 model = TransformerEncoderDecoder(encoder, decoder)
-# train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
+train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
 PATH = "model_att.pt"
-# torch.save(model.state_dict(), PATH)
+torch.save(model.state_dict(), PATH)
 
-model.load_state_dict(torch.load(PATH, map_location=device))
+# model.load_state_dict(torch.load(PATH, map_location=device))
 
 
 # sentences_preprocessed, true_trans_preprocessed = read_test_data(data_name="php")
@@ -181,16 +181,16 @@ model.load_state_dict(torch.load(PATH, map_location=device))
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
 
-sentences = ["The man is walking his dog"]
-sentences_preprocessed = [sentence for sentence in sentences]
-true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
-true_trans_preprocessed = [trans for trans in true_trans]
-predictions = []
-for sentence in sentences_preprocessed:
-    sentence_predicted = predict_sentence(model, sentence, src_vocab, tgt_vocab, len_sequence, device)
-    print(sentence_predicted)
-    predictions.append(sentence_predicted)
-print("abc")
+# sentences = ["The man is walking his dog"]
+# sentences_preprocessed = [sentence for sentence in sentences]
+# true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
+# true_trans_preprocessed = [trans for trans in true_trans]
+# predictions = []
+# for sentence in sentences_preprocessed:
+#     sentence_predicted = predict_sentence(model, sentence, src_vocab, tgt_vocab, len_sequence, device)
+#     print(sentence_predicted)
+#     predictions.append(sentence_predicted)
+# print("abc")
 # references = [[nltk.tokenize.word_tokenize(sent.lower())] for sent in true_trans_preprocessed]
 # candidates = [nltk.tokenize.word_tokenize(sent.lower()) for sent in predictions]
 # score = corpus_bleu(references, candidates)
