@@ -6,10 +6,11 @@ import torch
 import torch.nn as nn
 import collections
 import math
-from read_data_nmt import truncate_pad
+from read_data_nmt import truncate_pad, load_val_data
 from nltk.translate.bleu_score import corpus_bleu
 import nltk
 from tqdm import tqdm
+import pickle
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -55,9 +56,29 @@ def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_prepr
     candidates = [nltk.tokenize.word_tokenize(sent.lower()) for sent in predictions]
     score = corpus_bleu(references, candidates)
     print(score)
+    return score
 
+
+def validate(model, val_iter, src_vocab, tgt_vocab, loss_function):
+
+    running_loss = 0.0
+    model.eval()
+    with torch.no_grad():
+        for batch_idx, batch in enumerate(val_iter):
+            x, x_len, y, y_len = [item.to(device) for item in batch]
+            bos_token = torch.tensor([tgt_vocab["<bos>"]] * y.shape[0], device=device).reshape(-1, 1)
+            # Append beginning of sentence (BOS) to the input to the decoder so that input to the decoder is shifted by one to the right.
+            decoder_input = torch.cat([bos_token, y[:, :-1]], 1)
+            output_model, state = model(x, decoder_input, x_len)
+            # Passing the output of the model to the loss function.
+            l = loss_function(output_model, y, y_len)
+            running_loss += l.sum().item()
+    return running_loss / len(val_iter.dataset)
 
 def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_vocab, device):
+    val_loss_list = []
+    train_loss_list = []
+    bleu_score_list = []
 
     # Masked Cross Entropy loss function.
     loss_function = MaskedCELoss()
@@ -77,6 +98,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
     model.train()
 
     sentences_preprocessed, true_trans_preprocessed = read_val_data(data_name="php")
+    val_iter = load_val_data(128, len_sequence, src_vocab, tgt_vocab)
     for epoch in range(n_epochs):
         running_loss = 0.0
         model.train()
@@ -97,16 +119,28 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
             with torch.no_grad():
                 running_loss += l.sum().item()
 
+        val_loss = validate(model, val_iter, src_vocab, tgt_vocab, loss_function)
+        train_loss = running_loss / len(data_loader.dataset)
+        val_loss_list.append(val_loss)
+        train_loss_list.append(train_loss)
+        # bleu_score_list
+
+        score = test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
+        bleu_score_list.append(score)
+        print(predict_sentence(model, "A person crosses the street and avoids the spill of paint." , src_vocab, tgt_vocab, len_sequence, device))
+        print(f"Epoch_Loss, {epoch}, {running_loss / len(data_loader.dataset)}")
+        print("val loss", val_loss)
+
         # Save model every 19th epoch.
         if epoch % 20 == 19:
             PATH = "model_att.pt"
             torch.save(model.state_dict(), PATH)
-
-        if epoch % 10 == 9:
-            test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
-
-        print(predict_sentence(model, "A person crosses the street and avoids the spill of paint." , src_vocab, tgt_vocab, len_sequence, device))
-        print(f"Epoch_Loss, {epoch}, {running_loss / len(data_loader.dataset)}")
+            with open("val_loss", "wb") as fp:
+                pickle.dump(val_loss, fp)
+            with open("train_loss", "wb") as fp:
+                pickle.dump(train_loss, fp)
+            with open("blue_score", "wb") as fp:
+                pickle.dump(bleu_score_list, fp)
 
 
 # embedding_size = 100
@@ -115,7 +149,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 batch_size = 128
 len_sequence = 20
 lr = 0.0001
-n_epochs = 200
+n_epochs = 80
 print(n_epochs, lr, len_sequence)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)

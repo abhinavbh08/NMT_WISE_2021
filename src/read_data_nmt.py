@@ -134,7 +134,23 @@ def load_data(batch_size, num_steps):
     itrtr = data.DataLoader(dataset, batch_size, shuffle=True)
     return itrtr, src_vocab, tgt_vocab
 
+def load_val_data(batch_size, num_steps, src_vocab, tgt_vocab):
+    preprocessed_text = read_val_data(data_name="php")
+    source, target = tokenize_data(preprocessed_text)
+    src_array, src_valid_len = build_array_nmt(source, src_vocab, num_steps)
+    tgt_array, tgt_valid_len = build_array_nmt(target, tgt_vocab, num_steps)
+    data_arrays = (src_array, src_valid_len, tgt_array, tgt_valid_len)
+    dataset = data.TensorDataset(*data_arrays)
+    itrtr = data.DataLoader(dataset, batch_size, shuffle=False)
+    return itrtr
+
+
 # train_iter, src_vocab, tgt_vocab = load_data(2, num_steps=10)
+# val_iter = load_val_data(2, 10, src_vocab, tgt_vocab)
+# for x, x_len, y, y_len in val_iter:
+#     print(x)
+#     print(x_len)
+
 # for x, x_len, y, y_len in train_iter:
 #     print(x)
 #     print(x_len)
