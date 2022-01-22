@@ -147,7 +147,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # hidden_size = 200
 # num_layers = 1
 batch_size = 128
-len_sequence = 20
+len_sequence = 30
 lr = 0.0001
 n_epochs = 80
 print(n_epochs, lr, len_sequence)
@@ -158,7 +158,7 @@ print(len(tgt_vocab))
 # encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
-ss = 256
+ss = 128
 hs = ss
 encoder = TransformerEncoder(
     query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 3
@@ -181,7 +181,7 @@ torch.save(model.state_dict(), PATH)
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
 
-# sentences = ["The man is walking his dog"]
+# sentences = ["People are all standing together in front of a statue of an animal, and they are all wearing cool-weather clothing."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
