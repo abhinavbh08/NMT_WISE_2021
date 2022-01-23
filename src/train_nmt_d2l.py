@@ -127,7 +127,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 
         score = test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
         bleu_score_list.append(score)
-        print(predict_sentence(model, "A person crosses the street and avoids the spill of paint." , src_vocab, tgt_vocab, len_sequence, device))
+        print(predict_sentence(model, "php handbook." , src_vocab, tgt_vocab, len_sequence, device))
         print(f"Epoch_Loss, {epoch}, {running_loss / len(data_loader.dataset)}")
         print("val loss", val_loss)
 
@@ -161,10 +161,10 @@ print(len(tgt_vocab))
 ss = 128
 hs = ss
 encoder = TransformerEncoder(
-    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 3
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 2
 )
 decoder = TransformerDecoder(
-    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(tgt_vocab), num_layers = 3
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=4, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(tgt_vocab), num_layers = 2
 )
 print("4 layers, 128 size")
 model = TransformerEncoderDecoder(encoder, decoder)
@@ -181,7 +181,7 @@ torch.save(model.state_dict(), PATH)
 
 # sentences = ["PHP Manual", "Returns the name of the field corresponding to field_number.", "Home"]
 
-# sentences = ["People are all standing together in front of a statue of an animal, and they are all wearing cool-weather clothing."]
+# sentences = ["As you can realize, PHP cannot protect your database by itself."]
 # sentences_preprocessed = [sentence for sentence in sentences]
 # true_trans = ["PHP Handbuch", "Gibt den Namen des Feldes, das field_number entspricht, zurück.", "Zum Anfang"]
 # true_trans_preprocessed = [trans for trans in true_trans]
@@ -191,6 +191,7 @@ torch.save(model.state_dict(), PATH)
 #     print(sentence_predicted)
 #     predictions.append(sentence_predicted)
 # print("abc")
+
 # references = [[nltk.tokenize.word_tokenize(sent.lower())] for sent in true_trans_preprocessed]
 # candidates = [nltk.tokenize.word_tokenize(sent.lower()) for sent in predictions]
 # score = corpus_bleu(references, candidates)
