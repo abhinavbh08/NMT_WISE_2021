@@ -62,7 +62,7 @@ def test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_prepr
 def validate(model, val_iter, src_vocab, tgt_vocab, loss_function):
 
     running_loss = 0.0
-    model.eval()
+#     model.eval()
     with torch.no_grad():
         for batch_idx, batch in enumerate(val_iter):
             x, x_len, y, y_len = [item.to(device) for item in batch]
