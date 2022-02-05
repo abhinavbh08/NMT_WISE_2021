@@ -27,7 +27,8 @@ def read_data(data_name="php"):
             return file.read()
 
     print(len(data_en), len(data_de))
-    return data_en, data_de
+    # return data_en, data_de
+    return data_de, data_en
 
 # raw_text = read_data(data_name="php")
 # print("abc")
@@ -77,7 +78,8 @@ def read_val_data(data_name):
                 source.append(parts[0])
                 target.append(parts[1])
 
-    return source, target
+    # return source, target
+    return target, source
 
 # read_test_data(data_name="php")
 
@@ -125,8 +127,8 @@ def load_data(batch_size, num_steps):
     # preprocessed_text = read_data(read_data(data_name="abc"))
     preprocessed_text = read_data(data_name="php")
     source, target = tokenize_data(preprocessed_text)
-    src_vocab = Vocab(source, min_freq=2, reserved_tokens=['<pad>', '<bos>', '<eos>'])
-    tgt_vocab = Vocab(target, min_freq=2, reserved_tokens=['<pad>', '<bos>', '<eos>'])
+    src_vocab = Vocab(source, min_freq=1, reserved_tokens=['<pad>', '<bos>', '<eos>'])
+    tgt_vocab = Vocab(target, min_freq=1, reserved_tokens=['<pad>', '<bos>', '<eos>'])
     src_array, src_valid_len = build_array_nmt(source, src_vocab, num_steps)
     tgt_array, tgt_valid_len = build_array_nmt(target, tgt_vocab, num_steps)
     data_arrays = (src_array, src_valid_len, tgt_array, tgt_valid_len)
