@@ -157,7 +157,7 @@ print(len(tgt_vocab))
 # encoder = S2SEncoder(len(src_vocab), embedding_size, hidden_size, num_layers)
 # decoder = S2SAttentionDecoder(len(tgt_vocab), embedding_size, hidden_size, num_layers)
 # model = S2SEncoderDecoder(encoder, decoder)
-ss = 256
+ss = 512
 hs = ss
 encoder = TransformerEncoder(
     query=ss, key=ss, value=ss, hidden_size=ss, num_head=8, dropout=0.1, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 4
