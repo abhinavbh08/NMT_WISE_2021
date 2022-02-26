@@ -148,7 +148,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 batch_size = 128
 len_sequence = 20
 lr = 0.0001
-n_epochs = 80
+n_epochs = 50
 print(n_epochs, lr, len_sequence)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
@@ -160,10 +160,10 @@ print(len(tgt_vocab))
 ss = 1024
 hs = ss
 encoder = TransformerEncoder(
-    query=ss, key=ss, value=ss, hidden_size=ss, num_head=8, dropout=0.5, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(src_vocab), num_layers = 6
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=8, dropout=0.3, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs*4, vocab_size=len(src_vocab), num_layers = 6
 )
 decoder = TransformerDecoder(
-    query=ss, key=ss, value=ss, hidden_size=ss, num_head=8, dropout=0.5, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs, vocab_size=len(tgt_vocab), num_layers = 6
+    query=ss, key=ss, value=ss, hidden_size=ss, num_head=8, dropout=0.3, lnorm_size=[ss], ffn_input=ss, ffn_hidden=hs*4, vocab_size=len(tgt_vocab), num_layers = 6
 )
 model = TransformerEncoderDecoder(encoder, decoder)
 train_model(model, data_iter, lr, n_epochs, tgt_vocab, src_vocab, device)
