@@ -146,9 +146,9 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # embedding_size = 100
 # hidden_size = 200
 # num_layers = 1
-batch_size = 128
+batch_size = 512
 len_sequence = 20
-lr = 0.00005
+lr = 0.0001
 n_epochs = 80
 print(n_epochs, lr, len_sequence)
 
