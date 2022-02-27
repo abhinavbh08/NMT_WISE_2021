@@ -124,7 +124,7 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
         train_loss_list.append(train_loss)
         # bleu_score_list
         
-        if (score%2)==1:
+        if (epoch%2)==1:
             score = test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
             bleu_score_list.append(score)
         print(predict_sentence(model, "ein Junge sitzt im Auto" , src_vocab, tgt_vocab, len_sequence, device))
