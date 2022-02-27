@@ -123,9 +123,10 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
         val_loss_list.append(val_loss)
         train_loss_list.append(train_loss)
         # bleu_score_list
-
-        score = test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
-        bleu_score_list.append(score)
+        
+        if (score%2)==1:
+            score = test_bleu(model, src_vocab, tgt_vocab, len_sequence, device, sentences_preprocessed, true_trans_preprocessed)
+            bleu_score_list.append(score)
         print(predict_sentence(model, "ein Junge sitzt im Auto" , src_vocab, tgt_vocab, len_sequence, device))
         print(f"Epoch_Loss, {epoch}, {running_loss / len(data_loader.dataset)}")
         print("val loss", val_loss)
