@@ -146,10 +146,10 @@ def train_model(model, data_loader, learning_rate, n_epochs, tgt_vocab, src_voca
 # embedding_size = 100
 # hidden_size = 200
 # num_layers = 1
-batch_size = 128
+batch_size = 256
 len_sequence = 30
 lr = 0.0001
-n_epochs = 50
+n_epochs = 30
 print(n_epochs, lr, len_sequence)
 
 data_iter, src_vocab, tgt_vocab = load_data(batch_size, len_sequence)
