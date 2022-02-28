@@ -14,10 +14,10 @@ def read_data(data_name="php"):
     data_path_de = "data/de-en_deduplicated/train.de"
 
     if data_name=="php":
-        with open(data_path_en_kaggle, "r") as file:
+        with open(data_path_en, "r") as file:
             data_en = file.read().split("\n")[:-1]
 
-        with open(data_path_de_kaggle, "r") as file:
+        with open(data_path_de, "r") as file:
             data_de = file.read().split("\n")[:-1]
     else:
         data_path_kaggle = "/kaggle/input/enfrdata/fra_small.txt"
@@ -60,9 +60,9 @@ def read_val_data(data_name):
     data_path_de = "data/de-en_deduplicated/val.de" 
 
     if data_name=="php":
-        with open(data_path_en_kaggle, "r") as file:
+        with open(data_path_en, "r") as file:
             data_en = file.read().split("\n")[:-1]
-        with open(data_path_de_kaggle, "r") as file:
+        with open(data_path_de, "r") as file:
             data_de = file.read().split("\n")[:-1]        
         source, target = data_en, data_de
     else:
